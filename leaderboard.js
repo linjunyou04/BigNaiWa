@@ -294,29 +294,33 @@
     try { localStorage.setItem(INTRO_SEEN_KEY, '1'); } catch (e) { /* 无痕模式忽略 */ }
   }
 
-  /* 公告里的「当前第一名」：只渲染榜首那一条 */
+  /* 公告里的「当前第一名」：只显示榜首，渲染成一行紧凑文本。
+     这里刻意不走 renderBoard —— 那个函数依赖 .board-list 的 flex 高度，
+     在公告这个被 flex 压缩的容器里会塌成 0 高，名字就看不见了。 */
   function refreshIntroBoard() {
     if (!introBoard) return;
     introBoard.textContent = '';
-    var p = document.createElement('p');
-    p.className = 'board-empty';
-    p.textContent = '正在读取排行榜…';
-    introBoard.appendChild(p);
+
+    var line = document.createElement('p');
+    line.className = 'board-empty';
+    line.textContent = '正在读取排行榜…';
+    introBoard.appendChild(line);
 
     fetchTop().then(function (rows) {
-      var top = rows.slice(0, 1);          // fetchTop 已按分数降序，第一条就是榜首
-      var main = listEl;
-      listEl = introBoard;                 // 临时把渲染目标切到公告里的容器
-      try {
-        if (!top.length) {
-          /* 空榜：主榜单的「还没有人提交」配上「当前第一名」的标题会读着别扭，单独给一句 */
-          boardMessage('还没有人上榜，第一名等你来拿 🏆');
-        } else {
-          renderBoard(top, null);
-        }
-      } finally {
-        listEl = main;                     // 无论如何都切回来，别把主榜单弄丢
+      var top = rows[0];                 // fetchTop 已按分数降序，第一条就是榜首
+      introBoard.textContent = '';
+      var p = document.createElement('p');
+      p.className = 'board-empty';
+
+      if (!top) {
+        p.textContent = '还没有人上榜，第一名等你来拿 🏆';
+      } else {
+        var box = document.createElement('span');
+        box.className = 'intro-champ';
+        box.textContent = '🥇 ' + top.name + '　' + top.score + ' 分';
+        p.appendChild(box);
       }
+      introBoard.appendChild(p);
     }).catch(function (err) {
       introBoard.textContent = '';
       var q = document.createElement('p');

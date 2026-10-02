@@ -647,6 +647,11 @@ body {
 
 /* ---------------- 开局公告 ---------------- */
 
+/* 公告在 DOM 里排在排行榜弹窗前面，两者 z-index 都是 .modal 的 20。
+   同层级时「后出现的盖在上面」—— 排行榜弹窗会盖住公告，吃掉 ✕ 和按钮的点击。
+   所以公告必须显式抬高。 */
+#introModal { z-index: 30; }
+
 .intro-card {
   width: min(430px, 100%);
   max-height: min(640px, calc(var(--vh) - 32px));
@@ -730,20 +735,50 @@ body {
 
 .lg-txt strong { color: var(--ink); }
 
-/* 公告里的「当前第一名」：只展示一条，所以不用滚动条 */
-.intro-board { min-height: 0; }
+/* 公告里的「当前第一名」 */
+.intro-board {
+  /* 不要依赖 flex 撑高：.modal-card 是 flex column，.intro-body 是 flex:1 1 auto，
+     高度富余时这里会被压成 0 高，看上去就是「标题下面直接跟开始按钮」。
+     用 overflow:hidden 清掉浮动、min-height 兜底，保证一定有可见高度。 */
+  min-height: 46px;
+  overflow: hidden;
+  border-radius: 12px;
+}
 
 .intro-board .board-row {
   margin-bottom: 0;
   padding: 12px 14px;
 }
 
-.intro-board .board-empty { margin: 12px 8px; }
+.intro-board .board-empty {
+  margin: 0;
+  padding: 13px 8px;
+}
+
+/* 榜首那一行：金色底 + 名字加粗，一眼能看出是谁 */
+.intro-champ {
+  display: inline-block;
+  padding: 7px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #8a5a12;
+  border-radius: 11px;
+  background: linear-gradient(100deg, #fff6d8, #ffe9a8);
+  box-shadow: inset 0 0 0 1px rgba(214, 160, 96, .35);
+}
 
 .intro-foot {
+  flex: 0 0 auto;          /* 按钮永不被压缩 */
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid rgba(214, 160, 96, .22);
+}
+
+/* 公告里的「开始游戏」：这里是普通块级容器，不是 .actions 那个 grid，
+   所以 btn-wide 的 grid-column 不起作用，得显式撑满 */
+.intro-foot .btn {
+  display: block;
+  width: 100%;
 }
 
 /* 参数提示 ---------------- */

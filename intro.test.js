@@ -209,7 +209,7 @@ const fireKey = key => (winHandlers.keydown || []).forEach(fn => fn({ key }));
 
   /* ---------------- E. 公告里的第一名 ---------------- */
 
-  group('E. 公告内只展示当前第一名');
+  group('E. 公告内只展示当前第一名（名字 + 分数）');
   fetchImpl = () => Promise.resolve({
     ok: true, status: 200,
     text: () => Promise.resolve(JSON.stringify([
@@ -222,19 +222,16 @@ const fireKey = key => (winHandlers.keydown || []).forEach(fn => fn({ key }));
   Board.showIntro();
   await tick(); await tick();
 
-  const rows = els.introBoard.children;
-  check('公告里只渲染 1 行（共 3 条数据）', rows.length === 1, '实际=' + rows.length);
-  check('就是榜首「甲」', rows[0] && rows[0].children[1] && rows[0].children[1].textContent === '甲',
-    '实际=' + (rows[0] && rows[0].children[1] && rows[0].children[1].textContent));
-  check('分数是 900', rows[0] && rows[0].children[2] && Number(rows[0].children[2].textContent) === 900,
-    '实际=' + (rows[0] && rows[0].children[2] && rows[0].children[2].textContent));
-  check('带第一名样式 r1', rows[0] && rows[0].className.includes('r1'),
-    '实际=' + (rows[0] && rows[0].className));
-  check('排名位显示 🥇', rows[0] && rows[0].children[0] && rows[0].children[0].textContent === '🥇',
-    '实际=' + (rows[0] && rows[0].children[0] && rows[0].children[0].textContent));
+  const introTxt = els.introBoard.children.map(c => c.textContent).join('');
+  check('公告里只有 1 个节点（不是多行列表）', els.introBoard.children.length === 1,
+    '实际=' + els.introBoard.children.length);
+  check('文案里带第一名名字「甲」', /甲/.test(introTxt), '实际=' + JSON.stringify(introTxt));
+  check('文案里带分数 900', /900/.test(introTxt), '实际=' + JSON.stringify(introTxt));
+  check('带奖牌 🥇', /🥇/.test(introTxt), '实际=' + JSON.stringify(introTxt));
+  check('不含第二/第三名', !/乙|丙/.test(introTxt), '实际=' + JSON.stringify(introTxt));
 
-  /* 关键：渲染公告榜后，主榜单容器不能被搞坏 */
-  check('主榜单容器未被公告渲染污染（renderBoard 目标已还原）',
+  /* 关键：公告渲染不能污染主榜单容器 */
+  check('主榜单容器未被公告渲染影响',
     els.boardList.children.length === 0,
     '主榜单子节点数=' + els.boardList.children.length);
 
@@ -250,9 +247,9 @@ const fireKey = key => (winHandlers.keydown || []).forEach(fn => fn({ key }));
   fetchImpl = () => Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve('[]') });
   Board.showIntro();
   await tick(); await tick();
-  const first = els.introBoard.children[0];
-  check('公告空榜给出专属引导文案', first && /第一名等你来拿/.test(first.textContent),
-    '实际=' + (first && first.textContent));
+  const firstTxt = els.introBoard.children.map(c => c.textContent).join('');
+  check('公告空榜给出专属引导文案', /第一名等你来拿/.test(firstTxt),
+    '实际=' + JSON.stringify(firstTxt));
 
   Board.refresh();
   await tick(); await tick();
