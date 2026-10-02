@@ -8,7 +8,9 @@
 
 ## 🎮 在线玩
 
-**<https://yhsome.github.io/BigNaiWa/>**
+**<https://linjunyou04.github.io/BigNaiWa/>**
+
+（本仓库的 GitHub Pages。**原作者版本**见 <https://yhsome.github.io/BigNaiWa/>。）
 
 （GitHub Pages 托管，手机浏览器打开就能玩，也可以「添加到主屏幕」当 App 用。）
 
@@ -23,7 +25,7 @@
 - 两个**同级别**的碰到一起就合成为高一级，并获得分数。
 - 顶上虚线是**警戒线**：有水果**卡在线的上方并且基本停住**、累计超过 1.5 秒即判负
   （被弹起来飞过线的不算，详见下面的「失败规则」）。
-- 结束后**自动上榜**（进不了前 20 就不提交）；没填昵称就记作「默认用户」，
+- 结束后点**「提交分数」**才上榜（不再自动提交）；没填昵称就记作「默认用户」，
   昵称随时可以在排行榜弹窗里改。
 - `←` `→` 微调位置，`Space` / `Enter` 投放，`R` 重新开始。
   （结束后空格/回车不再重开，避免手快连开新局。）
@@ -76,8 +78,9 @@ for (const b of balls) {
 
 ## 运行
 
-线上直接开 <https://yhsome.github.io/BigNaiWa/>；
-本地双击 `index.html` 即可（`file://` 协议下也能跑，排行榜同样可用）。
+线上直接开 <https://linjunyou04.github.io/BigNaiWa/>；
+本地双击 `index.html` 即可（`file://` 协议下也能跑，排行榜同样可用 ——
+Supabase 对 `file://` 返回的 `Origin: null` 是放行的）。
 也可以起个静态服务：
 
 ```bash
@@ -145,54 +148,60 @@ RLS 策略：`select` 对 `anon, authenticated` 全开；`insert` 只允许写�
 
 > 物理手感（弹性、摩擦、反弹阈值）**保持上游原值未改**。
 
+### 接口说明
+
 | 项 | 值 |
 | --- | --- |
-| 接口 | `POST https://tinywebdb.appinventor.space/api` |
-| 账号 | `user` / `secret` 以编码形式存在，运行时还原 |
-| 用到的 action | `update`（写）、`search`（按 tag 前缀读） |
-| tag | `dnw_<时间戳36进制>_<随机4位>` |
-| value | `{"n":"昵称","s":分数,"t":时间戳}` |
+| 接口 | `POST/GET https://znzncniwelbmkkdyuapz.supabase.co/rest/v1/bignaiwa` |
+| 认证 | 请求头 `apikey` + `Authorization: Bearer <anon key>` |
+| 读榜 | `?select=id,name,score,created_at&order=score.desc,created_at.asc&limit=1000` |
+| 提交 | `POST`，body `{"name":"昵称","score":分数}` |
 
-**榜单内容 = 最近 20 次提交**。服务端按提交时间倒序返回，所以只要拿最新两页
-（`no=1` 和 `no=101`）就够覆盖这 20 条，再多请求也没意义；取回来之后在窗口内按分数排名展示。
-这个设计的用意是：**榜单是一条滚动的时间窗，不是历史最高分榜**——分数只在自己还在窗口里的
-那段时间有效，后来的人会不断把你挤出去，所以卡在榜首或者长期占位没有意义。
+**榜单内容 = 全量记录**，按分数从高到低排列，同分先提交的在前。
+不再有时间窗概念 —— 上游那套「只取最近 20 次提交、后来的人把你挤出去」已经废弃，
+现在是**历史高分榜**，成绩会一直留着。
 
 ```js
-// 提交
-POST user=<你的 user>&secret=<你的 secret>&action=update
-     &tag=dnw_mukuffr8_435q
-     &value={"n":"奶娃大王","s":4321,"t":1759000000000}
+// 读榜
+GET /rest/v1/bignaiwa?select=id,name,score,created_at
+    &order=score.desc,created_at.asc&limit=1000
+→ [{"id":5,"name":"奶娃大王","score":4321,"created_at":"2026-10-02T14:51:40Z"}]
 
-// 读榜（只要最新两页）
-POST user=<你的 user>&secret=<你的 secret>&action=search&no=1&count=100&tag=dnw_&type=both
-→ {"dnw_mukuffr8_435q":"{\"n\":\"奶娃大王\",\"s\":4321,\"t\":1759000000000}"}
+// 提交
+POST /rest/v1/bignaiwa
+    {"name":"奶娃大王","score":4321}
 ```
 
-**结算流程**（打完自动上榜，不需要手动点提交）：
+**结算流程**（打完**不自动上榜**，需要手动点按钮）：
 
-1. 游戏结束 → 直接提交，昵称取 `localStorage` 里存的，**没填就用「默认用户」**；
-2. 提交成功 → 重新读一次榜单，把窗口内的排名显示出来；
-3. 提交失败 → 显示错误并给一个「重试提交」按钮。
-
-排行榜从头到尾**只写自己那条记录，不读也不动别人的数据**：没有任何 `delete`，
-旧成绩是自然被挤出时间窗的，不是被清掉的。
+1. 游戏结束 → 弹结算窗，显示本局得分与最高分，昵称取 `localStorage` 里存的
+   （没填就用「默认用户」）；
+2. 点**「提交分数」** → 上传成功，按钮变为「已提交 ✓」并禁用（防止重复提交），
+   同时刷新榜单并高亮你自己那条；
+3. 提交失败 → 显示错误，按钮恢复可点，可以直接再试。
 
 昵称在排行榜弹窗顶部的「我的昵称」里随时能改（`change` / `blur` / 回车时落盘）。
 
 实现上的几个小处理：
 
 - **昵称**存 `localStorage`（`danaiwa.name`），去掉控制字符、限长 12 字，空串一律当「默认用户」；
-- **防手抖**：自动提交时校验「两次提交至少间隔 3 秒」，0 分不上榜，
-  分数明显离谱（> 99999999）的不收；
+- **防重复**：同一局提交成功后按钮禁用；另外两次提交之间至少间隔 3 秒，0 分不上榜，
+  分数超出 `[0, 99999999]` 不收；
 - **不抢按键**：焦点在输入框里时，`game.js` 的键盘处理直接让路（不然打字会掉水果）；
-- **容错**：网络不通只是排行榜打不开，游戏照常玩；接口偶发 502 会自动重试一次；
-  返回不是 JSON 会给出可读的错误提示；
+- **容错**：网络不通只是排行榜打不开，游戏照常玩；返回的错误信息会直接显示出来；
 - **XSS**：榜单全部用 `textContent` 渲染，不拼 HTML；
-- 榜单是最近 20 次提交（最新两页足够覆盖），弹窗底部有标注。
+- **列表可滑动**：`.board-list` 限制高度 + `overflow-y: auto`，
+  全量记录再多也不会把弹窗撑破。
 
-换账号：改排行榜源码顶部的 `USER` / `SECRET` / `PREFIX` 即可，改完跑一遍构建脚本产出
-`leaderboard.min.js`（换 `PREFIX` 相当于另开一个榜）。
+### 安全边界
+
+前端只用 **anon key**（可公开的密钥）。数据库侧靠 RLS 约束：
+
+- `SELECT`：对 `anon, authenticated` 全开（排行榜要展示全量）
+- `INSERT`：允许，且 `with check` 里再校验一遍数据合法性
+- `UPDATE` / `DELETE`：**显式 revoke**，anon 改不了也删不掉任何记录
+
+**service_role key 绝不能写进前端代码** —— 那是绕过 RLS 的管理员权限。
 
 ## 碰撞形状（不是圆）
 
