@@ -27,7 +27,7 @@
 
 /* hidden 属性必须真的隐藏。
    浏览器默认只给 [hidden] { display: none }（权重 0,1,0），
-   一旦某个类也写了 display（比如 .revive-chip { display: inline-flex }），
+   一旦某个类也写了 display（比如 .btn { display: inline-flex }），
    同权重、后写的赢 —— hidden 就静默失效了，元素还挂在那儿。 */
 [hidden] { display: none !important; }
 
@@ -161,85 +161,18 @@ body {
   color: var(--ink-soft);
 }
 
-/* ---------------- 赞助作者弹窗 ---------------- */
+/* ---------------- 数据支持水印 ---------------- */
 
-.sponsor-body {
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+.credit {
+  margin: 10px 0 0;
+  font-size: 11.5px;
+  line-height: 1.5;
   text-align: center;
-}
-
-.sponsor-note {
-  margin: 0 0 14px;
-  font-size: 13px;
-  line-height: 1.7;
+  letter-spacing: .04em;
   color: var(--ink-soft);
-}
-
-.sponsor-qr {
-  display: block;
-  width: min(258px, 70vw);
-  height: auto;
-  margin: 0 auto;
-  padding: 6px;
-  border-radius: 14px;
-  background: #fff;
-  box-shadow: 0 6px 20px rgba(140, 96, 56, .18);
-}
-
-.sponsor-hint {
-  margin: 12px 0 0;
-  font-size: 12px;
-  color: var(--ink-soft);
-}
-
-/* 结算弹窗里的「赏作者一包辣条」：要一眼看到，但别跟主按钮抢
-   —— 用琥珀金（跟珊瑚红的主按钮区分开），加一道缓慢扫过的光，再叠一点亮度呼吸。
-   注意选择器写成 .btn.btn-sponsor：这段在源码里排在 .btn 之前，
-   单靠 .btn-sponsor 会被后面的 .btn 同权重覆盖掉。 */
-.btn.btn-sponsor {
-  position: relative;
-  overflow: hidden;
-  color: #5a3200;
-  font-weight: 800;
-  letter-spacing: .01em;
-  border-color: transparent;
-  background: linear-gradient(135deg, #ffd97a, #ffb020 52%, #f78f00);
-  box-shadow: 0 8px 22px rgba(244, 150, 0, .42), inset 0 1px 0 rgba(255, 255, 255, .5);
-  animation: sponsorPulse 2.6s ease-in-out infinite;
-}
-
-.btn.btn-sponsor:hover {
-  transform: translateY(-2px) scale(1.012);
-  box-shadow: 0 12px 30px rgba(244, 150, 0, .52), inset 0 1px 0 rgba(255, 255, 255, .55);
-}
-.btn.btn-sponsor:active { transform: translateY(1px) scale(.99); }
-
-/* 一道光周期性地扫过去，提示「这里可以点」 */
-.btn-sponsor::after {
-  content: "";
-  position: absolute;
-  top: -20%;
-  bottom: -20%;
-  width: 42%;
-  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .78), transparent);
-  transform: translateX(-150%) skewX(-20deg);
-  animation: sponsorSheen 3.2s ease-in-out infinite;
-  pointer-events: none;
-}
-
-@keyframes sponsorPulse {
-  0%, 100% { filter: brightness(1) saturate(1); }
-  50%      { filter: brightness(1.09) saturate(1.12); }
-}
-
-@keyframes sponsorSheen {
-  0%, 55%   { transform: translateX(-150%) skewX(-20deg); }
-  82%, 100% { transform: translateX(330%) skewX(-20deg); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .btn.btn-sponsor, .btn-sponsor::after { animation: none; }
+  opacity: .75;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* ---------------- 侧边面板 ---------------- */
@@ -304,41 +237,6 @@ body {
 
 .stat-best { color: #e79a1f; }
 
-/* 复活币：浮在棋盘左上角的小胶囊。
-   刻意不放进 .stats —— 手机上面板是横向 flex，多一个卡片会把分数卡挤到
-   52px 宽还折行（实测面板从 66px 涨到 102px，整个版式被顶开）。 */
-.revive-chip {
-  position: absolute;
-  left: 10px;
-  top: 10px;
-  z-index: 3;
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 3px 9px;
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 800;
-  line-height: 1.4;
-  font-variant-numeric: tabular-nums;
-  color: #6a3c00;
-  background: linear-gradient(135deg, #ffe6a3, #ffc247);
-  box-shadow: 0 3px 10px rgba(200, 130, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .75);
-  pointer-events: none;          /* 绝不挡住投放 */
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.revive-chip-ico { font-size: 12px; }
-
-.revive-chip.pop { animation: revivePop .5s cubic-bezier(.2, .9, .3, 1.5); }
-
-@keyframes revivePop {
-  0%   { transform: scale(1); }
-  45%  { transform: scale(1.22); box-shadow: 0 6px 18px rgba(200, 130, 0, .5); }
-  100% { transform: scale(1); }
-}
-
 /* 合成表底下那行规则说明 */
 .chain-note {
   margin: 6px 0 0;
@@ -348,34 +246,6 @@ body {
   color: var(--ink-soft);
 }
 .chain-note strong { color: #c8601a; }
-
-/* 越线那一屏 */
-.revive-ask .dialog-score { margin-bottom: 10px; }
-
-.revive-hint {
-  margin: 0 0 18px;
-  padding: 10px 12px;
-  border-radius: 14px;
-  font-size: 12.5px;
-  line-height: 1.6;
-  color: #7a4a12;
-  background: rgba(255, 233, 190, .8);
-  box-shadow: inset 0 0 0 1px rgba(214, 160, 96, .25);
-}
-
-/* 「用一枚复活币」：青绿色，跟珊瑚红的主按钮区分开 */
-.btn.btn-revive {
-  color: #fff;
-  border-color: transparent;
-  font-weight: 700;
-  background: linear-gradient(135deg, #4fd1a5, #23b183 55%, #14946a);
-  box-shadow: 0 8px 20px rgba(35, 177, 131, .38);
-}
-.btn.btn-revive:hover { box-shadow: 0 12px 26px rgba(35, 177, 131, .46); }
-
-@media (prefers-reduced-motion: reduce) {
-  .revive-chip.pop { animation: none; }
-}
 
 .stat-value.bump { animation: bump .32s ease; }
 
@@ -484,6 +354,64 @@ body {
 }
 
 .submit-box .btn { width: 100%; }
+
+/* 「提交分数」：结算窗里最该被按的那个键。
+   原来这里是个默认隐藏、只在失败时冒出来的「重试提交」，玩家经常找不到；
+   现在改成常驻的绿色主按钮，并在上面加一道缓慢扫过的光，明确告诉他「点这里」。 */
+.btn.btn-submit {
+  position: relative;
+  overflow: hidden;
+  margin-top: 10px;
+  min-height: 46px;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  color: #fff;
+  border-color: transparent;
+  background: linear-gradient(135deg, #57d99a, #22b573 55%, #168e57);
+  box-shadow: 0 8px 20px rgba(34, 181, 115, .38), inset 0 1px 0 rgba(255, 255, 255, .35);
+  animation: submitPulse 2.4s ease-in-out infinite;
+}
+
+.btn.btn-submit::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .55), transparent);
+  animation: submitSheen 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.btn.btn-submit:hover {
+  box-shadow: 0 12px 26px rgba(34, 181, 115, .48);
+}
+
+.btn.btn-submit:disabled {
+  opacity: .7;
+  animation: none;
+  box-shadow: 0 4px 12px rgba(34, 181, 115, .22);
+}
+
+.btn.btn-submit:disabled::after { animation: none; opacity: 0; }
+
+@keyframes submitPulse {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-1.5px); }
+}
+
+@keyframes submitSheen {
+  0%   { left: -60%; }
+  55%  { left: 130%; }
+  100% { left: 130%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn.btn-submit,
+  .btn.btn-submit::after { animation: none; }
+}
 
 .submit-msg {
   margin: 0;
@@ -624,13 +552,27 @@ body {
 
 .icon-btn:hover { background: rgba(0, 0, 0, .1); }
 
+/* 排行榜列表：全量展示，所以必须能滚。
+   min-height 给 0 很关键 —— flex 子项默认 min-height:auto，
+   内容一多就会把 .modal-card 顶高、把 foot 挤出去，滚动条反而不出现。 */
 .board-list {
   flex: 1 1 auto;
-  min-height: 120px;
+  min-height: 0;
+  max-height: min(46vh, 340px);
   overflow-y: auto;
+  overscroll-behavior: contain;          /* 滚到头不要把整页带着一起滚 */
   -webkit-overflow-scrolling: touch;
   padding: 2px;
+  scrollbar-width: thin;
 }
+
+.board-list::-webkit-scrollbar { width: 7px; }
+.board-list::-webkit-scrollbar-track { background: transparent; }
+.board-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(180, 140, 100, .38);
+}
+.board-list::-webkit-scrollbar-thumb:hover { background: rgba(180, 140, 100, .6); }
 
 .board-empty {
   margin: 28px 8px;

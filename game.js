@@ -31,9 +31,7 @@
   const MAX_BONUS = 500;     // 两只神奶蛙相撞的奖励分
                              // （原来是 100 —— 合出全游戏最难的东西只给 100 分，太寒酸；
                              //  而且它同时清掉两块最大的水果、相当于救一条命，值这个价）
-  const MAX_MERGE_GIVES_REVIVE = true;  // 两只神奶蛙一起炸掉时，额外送一枚复活币
   const FREEZE_MS = 130;     // 清场时的定格，让这一下有重量
-  const REVIVE_STEP = 2000;  // 每累计多少分，发一枚复活币
   const MERGE_PAD = 0.8;     // 合成判定的接触容差（px）
 
   /* —— Q 弹手感 —— */
@@ -78,9 +76,12 @@
   /* 合成出 tier 的得分（三角数） */
   const MERGE_SCORE = [0, 1, 3, 6, 10, 15, 21, 28, 36, 45, 55];
 
-  /* 新水果的掉落权重（越小越常见） */
+  /* 新水果的掉落权重（越小越常见）
+     难度在这条线上调：把大水果的权重压低、并让整体更偏向小号，
+     盘面堆得慢、容错窗口小，分数才拉得开差距。
+     对照（原版）：tier 0..4 = 0.28 / 0.24 / 0.20 / 0.16 / 0.12 */
   const SPAWN_TIERS = [0, 1, 2, 3, 4];
-  const SPAWN_WEIGHTS = [0.28, 0.24, 0.20, 0.16, 0.12];
+  const SPAWN_WEIGHTS = [0.40, 0.28, 0.18, 0.09, 0.05];
 
   const BEST_KEY = 'danaiwa.best.v1';
   const MUTE_KEY = 'danaiwa.mute.v1';
@@ -104,14 +105,7 @@
   const resetBtn   = document.getElementById('resetBtn');
   const restartBtn = document.getElementById('restartBtn');
   const overlayEl     = document.getElementById('overlay');
-  const revivePromptEl = document.getElementById('revivePrompt');
   const overPanelEl    = document.getElementById('overPanel');
-  const reviveScoreEl  = document.getElementById('reviveScore');
-  const reviveLeftEl   = document.getElementById('reviveLeft');
-  const reviveBtn      = document.getElementById('reviveBtn');
-  const giveUpBtn      = document.getElementById('giveUpBtn');
-  const reviveBadge    = document.getElementById('reviveBadge');
-  const reviveCountEl  = document.getElementById('reviveCount');
 
   /* ---------------------------------------------------------
    *  工具
@@ -233,8 +227,6 @@
     aimX: W / 2,
     over: false,
     flash: 0,
-    revives: 0,        // 本局还剩几枚复活币（重开清零）
-    reviveGiven: 0,    // 本局已经发放过几次（用来判断跨过新的 2000 分）
     freeze: 0          // 命中定格剩余秒数
   };
 
@@ -527,7 +519,7 @@
       const tier = a.tier;
 
       if (tier >= MAX_TIER) {
-        /* 两只神奶蛙 → 一起炸掉，拿一大笔奖励分（外加一枚复活币）。
+        /* 两只神奶蛙 → 一起炸掉，拿一大笔奖励分。
            注意：它同时清掉了两块最大的水果，是后期唯一的泄压阀，不能取消。
            分数的飘字不用 addScore 那个普通的，下面单独给了「大字 +500」。 */
         addScore(MAX_BONUS);
@@ -539,10 +531,6 @@
         state.freeze = FREEZE_MS / 1000;      // 定格一下，让这一下有重量
         state.floats.push({ x: mx, y: my - 74, text: '两个神奶蛙 💥', life: 1.6 });
         state.floats.push({ x: mx, y: my - 16, text: '+' + MAX_BONUS, life: 2.2, big: true });
-        if (MAX_MERGE_GIVES_REVIVE) {
-          state.revives++;
-          paintRevives(true);
-        }
       } else {
         const nt = tier + 1;
         const nb = makeBall(mx, my, nt, (a.vx + b.vx) * 0.5, (a.vy + b.vy) * 0.5 - 60);
@@ -595,38 +583,6 @@
     if (state.particles.length > 420) state.particles.splice(0, state.particles.length - 420);
   }
 
-  /* 复活币胶囊：有币才显示，跨过 2000 分时弹一下。
-     注意 0 枚时也要把文字刷成 ×0 —— 否则下次显示出来的是上一次的旧数字。 */
-  function paintRevives(pop) {
-    if (!reviveBadge) return;
-    if (reviveCountEl) reviveCountEl.textContent = '×' + state.revives;
-    if (state.revives > 0) {
-      reviveBadge.hidden = false;
-      if (pop) {
-        reviveBadge.classList.remove('pop');
-        void reviveBadge.offsetWidth;
-        reviveBadge.classList.add('pop');
-      }
-    } else {
-      reviveBadge.hidden = true;
-      reviveBadge.classList.remove('pop');
-    }
-  }
-
-  /* 每累计 REVIVE_STEP 分，发一枚复活币 */
-  function grantRevives() {
-    let got = 0;
-    while (state.reviveGiven < Math.floor(state.score / REVIVE_STEP)) {
-      state.reviveGiven++;
-      state.revives++;
-      got++;
-    }
-    if (!got) return;
-    paintRevives(true);
-    state.floats.push({ x: W / 2, y: 210, text: '+1 复活币', life: 1.4, big: true });
-    Sound.merge(6);
-  }
-
   function addScore(n, x, y, text) {
     state.score += n;
     if (state.score > state.best) {
@@ -639,7 +595,6 @@
     if (x !== undefined) {
       state.floats.push({ x, y, text: text || ('+' + n), life: 1 });
     }
-    grantRevives();
   }
 
   function bump(el) {
@@ -710,9 +665,8 @@
     state.danger = danger;
   }
 
-  /* 正式结算：弹结算窗 + 把成绩交给排行榜 */
+  /* 正式结算：弹结算窗 + 把成绩交给排行榜模块（由玩家点「提交分数」才真正上传） */
   function settle() {
-    if (revivePromptEl) revivePromptEl.hidden = true;
     if (overPanelEl) overPanelEl.hidden = false;
     if (overlayEl) overlayEl.classList.add('show');
     /* 交给排行榜模块（没加载也不影响） */
@@ -721,57 +675,12 @@
     }
   }
 
-  /* 越线那一屏：有复活币就先问一句 */
-  function askRevive() {
-    if (reviveScoreEl) reviveScoreEl.textContent = state.score;
-    if (reviveLeftEl) reviveLeftEl.textContent = '还剩 ' + state.revives + ' 枚';
-    if (revivePromptEl) revivePromptEl.hidden = false;
-    if (overPanelEl) overPanelEl.hidden = true;
-    if (overlayEl) overlayEl.classList.add('show');
-  }
-
   function gameOver() {
     state.over = true;
     finalScoreEl.textContent = state.score;
     finalBestEl.textContent = state.best;
     Sound.over();
-    if (state.revives > 0) { askRevive(); return; }
     settle();
-  }
-
-  /* 复活：消除最顶上那颗，再把仍压在警戒线以上的清掉（只清一颗的话会立刻再输），
-     然后接着玩。返回 false 表示当前不能复活。 */
-  function revive() {
-    if (!state.over || state.revives <= 0) return false;
-
-    /* 1) 找最顶上的：按「上边缘」比，最小的最靠上 */
-    let top = -1;
-    let topEdge = Infinity;
-    for (let i = 0; i < state.balls.length; i++) {
-      const b = state.balls[i];
-      if (b.dead) continue;
-      const edge = b.y - b.r;
-      if (edge < topEdge) { topEdge = edge; top = i; }
-    }
-    if (top >= 0) state.balls.splice(top, 1);
-
-    /* 2) 还压在警戒线以上的，一并清掉 */
-    state.balls = state.balls.filter((b) => !b.dead && (b.y - b.r) >= DANGER_Y + 6);
-
-    /* 越线计时清零，给玩家一个反应窗口 */
-    for (let i = 0; i < state.balls.length; i++) state.balls[i].overTime = 0;
-
-    state.revives--;
-    state.over = false;
-    state.danger = false;
-    state.ready = true;
-    state.cooldown = 0;
-    state.flash = 0.6;               // 闪一下，让玩家知道救回来了
-    if (revivePromptEl) revivePromptEl.hidden = true;
-    if (overlayEl) overlayEl.classList.remove('show');
-    paintRevives(false);
-    Sound.ensure();
-    return true;
   }
 
   function reset() {
@@ -785,15 +694,11 @@
     state.flash = 0;
     state.danger = false;
     state.aimX = W / 2;
-    state.revives = 0;        // 复活币只在本局有效，重开清零
-    state.reviveGiven = 0;
     state.freeze = 0;
     state.pending = pickSpawnTier();
     state.next = pickSpawnTier(state.pending);
     if (overlayEl) overlayEl.classList.remove('show');
-    if (revivePromptEl) revivePromptEl.hidden = true;
     if (overPanelEl) overPanelEl.hidden = false;
-    paintRevives(false);
     scoreEl.textContent = '0';
     bestEl.textContent = state.best;
     drawNext();
@@ -1367,10 +1272,6 @@
 
     paintSoundBtn();
 
-    /* 越线那一屏的两个按钮 */
-    if (reviveBtn) reviveBtn.addEventListener('click', revive);
-    if (giveUpBtn) giveUpBtn.addEventListener('click', settle);
-
     drawChain();
     reset();
     loadBlur();             // 占位图是内联的，几乎立刻可用
@@ -1385,8 +1286,11 @@
   }
 
   /* 调试句柄（控制台可用）：__DNW__.state / .reset() / .drop() / .FRUITS / .render() */
-  window.__DNW__ = { state, reset, revive, settle, gameOver, tryDrop, stepPhysics, update, FRUITS,
-                     render, resizeCanvas, shapeOf, makeBall, paintRevives, addScore,
-                     MAX_BONUS, REVIVE_STEP,
+  window.__DNW__ = { state, reset, settle, gameOver, tryDrop, stepPhysics, update, FRUITS,
+                     render, resizeCanvas, shapeOf, makeBall, addScore,
+                     MAX_BONUS, SPAWN_TIERS, SPAWN_WEIGHTS,
+                     /* 物理参数也暴露出来，方便控制台现场微调手感 */
+                     RESTITUTION, WALL_RESTITUTION, REST_THRESHOLD, FRICTION,
+                     SQUASH_DECAY, SQUASH_MAX,
                      blurReady: () => !!blurImg };
 })();
