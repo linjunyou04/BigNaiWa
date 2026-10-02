@@ -1,5 +1,8 @@
 # 合成大奶娃
 
+> **本仓库为镜像备份，非原作者仓库。** 原项目：[YHSome/BigNaiWa](https://github.com/YHSome/BigNaiWa)。
+> 来源、快照版本与著作权说明见 [SOURCE.md](SOURCE.md)。代码版权归原作者所有，请勿在此仓库提 issue 或 PR。
+
 纯 **HTML + CSS + JavaScript** 的静态网页小游戏，零依赖、零构建、离线可玩。
 物理引擎（PBD 位置约束求解）是自己写的，没有引入 matter.js 等任何第三方库。
 
