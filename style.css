@@ -730,13 +730,15 @@ body {
 
 .lg-txt strong { color: var(--ink); }
 
-/* 公告里的排行预览：比排行榜弹窗矮一点，够看前几名就行 */
-.intro-board {
-  max-height: min(30vh, 190px);
-  border-radius: 12px;
+/* 公告里的「当前第一名」：只展示一条，所以不用滚动条 */
+.intro-board { min-height: 0; }
+
+.intro-board .board-row {
+  margin-bottom: 0;
+  padding: 12px 14px;
 }
 
-.intro-board .board-empty { margin: 16px 8px; }
+.intro-board .board-empty { margin: 12px 8px; }
 
 .intro-foot {
   margin-top: 12px;

@@ -207,14 +207,15 @@ const fireKey = key => (winHandlers.keydown || []).forEach(fn => fn({ key }));
   fireKey('Escape');
   check('Esc 也能关闭', els.introModal.classList.contains('show') === false);
 
-  /* ---------------- E. 公告里的排行渲染 ---------------- */
+  /* ---------------- E. 公告里的第一名 ---------------- */
 
-  group('E. 公告内展示排行榜');
+  group('E. 公告内只展示当前第一名');
   fetchImpl = () => Promise.resolve({
     ok: true, status: 200,
     text: () => Promise.resolve(JSON.stringify([
       { id: 1, name: '甲', score: 900, created_at: '2026-10-01T00:00:00Z' },
-      { id: 2, name: '乙', score: 500, created_at: '2026-10-02T00:00:00Z' }
+      { id: 2, name: '乙', score: 500, created_at: '2026-10-02T00:00:00Z' },
+      { id: 3, name: '丙', score: 300, created_at: '2026-10-03T00:00:00Z' }
     ]))
   });
   fetchCalls = [];
@@ -222,23 +223,25 @@ const fireKey = key => (winHandlers.keydown || []).forEach(fn => fn({ key }));
   await tick(); await tick();
 
   const rows = els.introBoard.children;
-  check('公告排行渲染出 2 行', rows.length === 2, '实际=' + rows.length);
-  check('第一行名字是「甲」', rows[0] && rows[0].children[1] && rows[0].children[1].textContent === '甲',
+  check('公告里只渲染 1 行（共 3 条数据）', rows.length === 1, '实际=' + rows.length);
+  check('就是榜首「甲」', rows[0] && rows[0].children[1] && rows[0].children[1].textContent === '甲',
     '实际=' + (rows[0] && rows[0].children[1] && rows[0].children[1].textContent));
-  check('第一行分数是 900', rows[0] && rows[0].children[2] && Number(rows[0].children[2].textContent) === 900,
+  check('分数是 900', rows[0] && rows[0].children[2] && Number(rows[0].children[2].textContent) === 900,
     '实际=' + (rows[0] && rows[0].children[2] && rows[0].children[2].textContent));
-  check('第一名标了 r1 样式', rows[0] && rows[0].className.includes('r1'),
+  check('带第一名样式 r1', rows[0] && rows[0].className.includes('r1'),
     '实际=' + (rows[0] && rows[0].className));
+  check('排名位显示 🥇', rows[0] && rows[0].children[0] && rows[0].children[0].textContent === '🥇',
+    '实际=' + (rows[0] && rows[0].children[0] && rows[0].children[0].textContent));
 
   /* 关键：渲染公告榜后，主榜单容器不能被搞坏 */
   check('主榜单容器未被公告渲染污染（renderBoard 目标已还原）',
     els.boardList.children.length === 0,
     '主榜单子节点数=' + els.boardList.children.length);
 
-  /* 主榜单仍能独立渲染 */
+  /* 主榜单仍能独立渲染全量 */
   Board.refresh();
   await tick(); await tick();
-  check('主榜单能独立渲染', els.boardList.children.length === 2,
+  check('主榜单能独立渲染全部 3 条', els.boardList.children.length === 3,
     '实际=' + els.boardList.children.length);
 
   /* ---------------- F. 空榜文案 ---------------- */
@@ -248,8 +251,14 @@ const fireKey = key => (winHandlers.keydown || []).forEach(fn => fn({ key }));
   Board.showIntro();
   await tick(); await tick();
   const first = els.introBoard.children[0];
-  check('空榜显示引导文案', first && /还没有人提交/.test(first.textContent),
+  check('公告空榜给出专属引导文案', first && /第一名等你来拿/.test(first.textContent),
     '实际=' + (first && first.textContent));
+
+  Board.refresh();
+  await tick(); await tick();
+  check('主榜单空榜文案不受影响用原句',
+    els.boardList.children[0] && /还没有人提交/.test(els.boardList.children[0].textContent),
+    '实际=' + (els.boardList.children[0] && els.boardList.children[0].textContent));
 
   /* ---------------- G. 读取失败 ---------------- */
 

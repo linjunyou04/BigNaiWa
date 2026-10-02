@@ -294,7 +294,7 @@
     try { localStorage.setItem(INTRO_SEEN_KEY, '1'); } catch (e) { /* 无痕模式忽略 */ }
   }
 
-  /* 公告里的排行榜：复用主榜单的渲染，只是换了个容器 */
+  /* 公告里的「当前第一名」：只渲染榜首那一条 */
   function refreshIntroBoard() {
     if (!introBoard) return;
     introBoard.textContent = '';
@@ -304,10 +304,16 @@
     introBoard.appendChild(p);
 
     fetchTop().then(function (rows) {
+      var top = rows.slice(0, 1);          // fetchTop 已按分数降序，第一条就是榜首
       var main = listEl;
-      listEl = introBoard;                 // 临时把渲染目标切到公告里的列表
+      listEl = introBoard;                 // 临时把渲染目标切到公告里的容器
       try {
-        renderBoard(rows, null);
+        if (!top.length) {
+          /* 空榜：主榜单的「还没有人提交」配上「当前第一名」的标题会读着别扭，单独给一句 */
+          boardMessage('还没有人上榜，第一名等你来拿 🏆');
+        } else {
+          renderBoard(top, null);
+        }
       } finally {
         listEl = main;                     // 无论如何都切回来，别把主榜单弄丢
       }
