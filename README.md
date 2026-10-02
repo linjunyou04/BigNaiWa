@@ -151,6 +151,58 @@ RLS 策略：`select` 对 `anon, authenticated` 全开；`insert` 只允许写�
 
 > 物理手感（弹性、摩擦、反弹阈值）**保持上游原值未改**。
 
+## 静态资源缓存（**改动推送后不生效时先看这里**）
+
+`index.html` 里的 CSS / JS 引用都带一个版本查询串，例如：
+
+```html
+<link rel="stylesheet" href="style.css?v=20261003a">
+<script src="leaderboard.js?v=20261003a"></script>
+```
+
+**每次改了 `style.css` / `game.js` / `leaderboard.js`，务必把 `v=` 的值改一下**
+（推荐用日期 + 字母，如 `20261003b`）。否则会出现「本地正常、线上还是老样子」。
+
+### 为什么会这样
+
+GitHub Pages 源站对静态文件返回：
+
+```
+Cache-Control: max-age=14400      ← 4 小时
+```
+
+而站点前面挂了一层 **Cloudflare 代理**（自定义域名 `gio.200124.xyz`），CF 会原样沿用这个
+头，于是形成三层缓存叠加：
+
+| 层级 | 效果 |
+| --- | --- |
+| GitHub Pages 源站 | 声明 `max-age=14400`（4 小时） |
+| Cloudflare CDN | 按源站策略缓存，`cf-cache-status: HIT` |
+| 浏览器 | 同样缓存 4 小时 |
+
+`index.html` 本身是 `cf-cache-status: DYNAMIC`（CF 默认不缓存 HTML），所以**新 HTML 能拿到、
+旧 CSS/JS 拿不到**，最容易造成"改了却看不出变化"的错觉。加版本串是最省事的解法。
+
+### 怎么确认是不是缓存问题
+
+```bash
+curl -sI https://gio.200124.xyz/style.css | grep -i "cf-cache-status\|cache-control"
+# cf-cache-status: HIT  → 命中了 CF 缓存
+```
+
+### 想立即生效
+
+1. **改版本串**（本项目已采用，推荐）
+2. Cloudflare 面板 → **Caching → Configuration → Purge Everything**（清空整个缓存）
+3. 浏览器 `Ctrl + Shift + R` 强制刷新（手机可清站点数据或用无痕）
+
+### 更彻底的方案（可选）
+
+在 Cloudflare 面板加一条 **Cache Rule**，让 `*.css` / `*.js` / `*.html` 走
+`Cache-Control: no-cache`，或直接把「Caching Level」设为 Standard 并降低 Edge TTL。
+注意：仓库里的 `_headers` 文件**只在 Cloudflare Pages 生效**，当前站点是
+「CF 代理 GitHub Pages」，改面板才有效。
+
 ### 接口说明
 
 | 项 | 值 |
