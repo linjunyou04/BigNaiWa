@@ -105,6 +105,72 @@
 
 </main>
 
+<!-- ===== 开局公告 ===== -->
+<div class="modal show" id="introModal" aria-hidden="true" role="dialog" aria-label="游戏说明">
+  <div class="modal-card intro-card">
+    <header class="modal-head">
+      <h2>👋 欢迎来到合成大奶娃</h2>
+      <button class="icon-btn" id="introClose" type="button" aria-label="关闭">✕</button>
+    </header>
+
+    <div class="intro-body">
+
+      <!-- 1. 改昵称 -->
+      <section class="intro-sec">
+        <h3 class="intro-h">① 先起个名字</h3>
+        <p class="intro-p">上榜时会显示这个名字，随时都能改。</p>
+        <div class="nick-row">
+          <label class="nick-label" for="introNickInput">我的昵称</label>
+          <input class="nick-input" id="introNickInput" type="text" maxlength="12"
+                 placeholder="默认用户" autocomplete="nickname" enterkeyhint="done">
+        </div>
+      </section>
+
+      <!-- 2. 图标说明 -->
+      <section class="intro-sec">
+        <h3 class="intro-h">② 右边这几个按钮</h3>
+        <ul class="intro-legend">
+          <li>
+            <span class="lg-ico">🏆</span>
+            <span class="lg-txt"><strong>排行榜</strong>　看全部玩家的分数排名，也能在这里改昵称</span>
+          </li>
+          <li>
+            <span class="lg-ico">🔊</span>
+            <span class="lg-txt"><strong>音效</strong>　开关合成的音效；点一下变 🔇 就是静音</span>
+          </li>
+          <li>
+            <span class="lg-ico">↻</span>
+            <span class="lg-txt"><strong>重开</strong>　放弃当前这局，重新开始（分数会清零）</span>
+          </li>
+        </ul>
+      </section>
+
+      <!-- 3. 玩法 -->
+      <section class="intro-sec">
+        <h3 class="intro-h">③ 怎么玩</h3>
+        <p class="intro-p">
+          移动瞄准、点击（触屏松手）投放。相同的两只撞在一起会合成更大的一只，
+          两只 <strong>神奶蛙</strong> 相撞会一起炸掉换 <strong>500 分</strong>。
+        </p>
+        <p class="intro-p">
+          堆过顶线就结束。结束时点 <strong>提交分数</strong> 才会上榜，每个分数只记一次。
+        </p>
+      </section>
+
+      <!-- 4. 当前排行 -->
+      <section class="intro-sec">
+        <h3 class="intro-h">④ 现在的排行</h3>
+        <div class="board-list intro-board" id="introBoard"></div>
+      </section>
+
+    </div>
+
+    <footer class="intro-foot">
+      <button class="btn btn-primary btn-wide" id="introStart" type="button">开始游戏</button>
+    </footer>
+  </div>
+</div>
+
 <!-- ===== 排行榜弹窗 ===== -->
 <div class="modal" id="boardModal" aria-hidden="true" role="dialog" aria-label="排行榜">
   <div class="modal-card">

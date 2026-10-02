@@ -645,7 +645,106 @@ body {
 
 .modal-foot .btn { flex: 0 0 auto; padding: 8px 16px; }
 
-/* ---------------- 参数提示 ---------------- */
+/* ---------------- 开局公告 ---------------- */
+
+.intro-card {
+  width: min(430px, 100%);
+  max-height: min(640px, calc(var(--vh) - 32px));
+}
+
+/* 公告内容区：整体可滚，小屏也不会把「开始游戏」挤没 */
+.intro-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 2px 4px 2px 2px;
+  scrollbar-width: thin;
+}
+
+.intro-body::-webkit-scrollbar { width: 7px; }
+.intro-body::-webkit-scrollbar-track { background: transparent; }
+.intro-body::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(180, 140, 100, .38);
+}
+
+.intro-sec + .intro-sec {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(214, 160, 96, .3);
+}
+
+.intro-h {
+  margin: 0 0 7px;
+  font-size: 14.5px;
+  letter-spacing: .02em;
+  color: var(--ink);
+}
+
+.intro-p {
+  margin: 0 0 6px;
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--ink-soft);
+}
+
+.intro-p:last-child { margin-bottom: 0; }
+
+.intro-p strong { color: var(--brand); }
+
+/* 图标说明表 */
+.intro-legend {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.intro-legend li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  margin-bottom: 6px;
+  border-radius: 11px;
+  background: rgba(255, 243, 224, .85);
+  box-shadow: inset 0 0 0 1px rgba(214, 160, 96, .18);
+}
+
+.intro-legend li:last-child { margin-bottom: 0; }
+
+.lg-ico {
+  flex: 0 0 30px;
+  font-size: 17px;
+  text-align: center;
+}
+
+.lg-txt {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.lg-txt strong { color: var(--ink); }
+
+/* 公告里的排行预览：比排行榜弹窗矮一点，够看前几名就行 */
+.intro-board {
+  max-height: min(30vh, 190px);
+  border-radius: 12px;
+}
+
+.intro-board .board-empty { margin: 16px 8px; }
+
+.intro-foot {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(214, 160, 96, .22);
+}
+
+/* 参数提示 ---------------- */
 
 .tips {
   margin: 0;

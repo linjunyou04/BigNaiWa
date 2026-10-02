@@ -279,7 +279,63 @@
     setMsg('点下面的按钮提交成绩', '');
   }
 
-  /* ---------------- 绑定 ---------------- */
+  /* ---------------- 开局公告 ---------------- */
+
+  var introModal = $('introModal');
+  var introBoard = $('introBoard');
+  var introNick = $('introNickInput');
+  var INTRO_SEEN_KEY = 'danaiwa.introSeen';
+
+  function introSeen() {
+    try { return localStorage.getItem(INTRO_SEEN_KEY) === '1'; } catch (e) { return false; }
+  }
+
+  function markIntroSeen() {
+    try { localStorage.setItem(INTRO_SEEN_KEY, '1'); } catch (e) { /* 无痕模式忽略 */ }
+  }
+
+  /* 公告里的排行榜：复用主榜单的渲染，只是换了个容器 */
+  function refreshIntroBoard() {
+    if (!introBoard) return;
+    introBoard.textContent = '';
+    var p = document.createElement('p');
+    p.className = 'board-empty';
+    p.textContent = '正在读取排行榜…';
+    introBoard.appendChild(p);
+
+    fetchTop().then(function (rows) {
+      var main = listEl;
+      listEl = introBoard;                 // 临时把渲染目标切到公告里的列表
+      try {
+        renderBoard(rows, null);
+      } finally {
+        listEl = main;                     // 无论如何都切回来，别把主榜单弄丢
+      }
+    }).catch(function (err) {
+      introBoard.textContent = '';
+      var q = document.createElement('p');
+      q.className = 'board-empty';
+      q.textContent = '读取失败：' + err.message;
+      introBoard.appendChild(q);
+    });
+  }
+
+  function openIntro() {
+    if (!introModal) return;
+    introModal.classList.add('show');
+    introModal.setAttribute('aria-hidden', 'false');
+    if (introNick && document.activeElement !== introNick) introNick.value = loadName();
+    refreshIntroBoard();
+  }
+
+  function closeIntro() {
+    if (!introModal) return;
+    introModal.classList.remove('show');
+    introModal.setAttribute('aria-hidden', 'true');
+    markIntroSeen();
+  }
+
+  /* 绑定 ---------------- */
 
   function bind() {
     var boardBtn = $('boardBtn');
@@ -298,6 +354,31 @@
       });
     }
     if (submitBtn) submitBtn.addEventListener('click', submitNow);
+
+    /* 开局公告 */
+    var introClose = $('introClose');
+    if (introClose) introClose.addEventListener('click', closeIntro);
+    var introStart = $('introStart');
+    if (introStart) introStart.addEventListener('click', closeIntro);
+    if (introModal) {
+      /* 点背景关闭；但首次没起过名字时不允许这样溜走 */
+      introModal.addEventListener('click', function (e) {
+        if (e.target === introModal && loadName()) closeIntro();
+      });
+    }
+    if (introNick) {
+      introNick.value = loadName();
+      var commitIntro = function () {
+        saveName(cleanName(introNick.value));
+        introNick.value = loadName();
+        paintName();
+      };
+      introNick.addEventListener('change', commitIntro);
+      introNick.addEventListener('blur', commitIntro);
+      introNick.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); commitIntro(); introNick.blur(); closeIntro(); }
+      });
+    }
 
     if (nickInput) {
       nickInput.value = loadName();
@@ -323,8 +404,16 @@
 
     paintName();
     window.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') closeBoard();
+      if (e.key !== 'Escape') return;
+      if (introModal && introModal.classList.contains('show')) {
+        if (loadName()) closeIntro();      // 没名字就走不掉，必须先起名
+        return;
+      }
+      closeBoard();
     });
+
+    /* 首次进入自动弹公告；之后只在玩家主动点开时出现 */
+    if (introModal && !introSeen()) openIntro();
   }
 
   if (document.readyState === 'loading') {
@@ -343,6 +432,12 @@
     submitScore: addScore,
     myName: myName,
     setName: function (n) { saveName(cleanName(n)); paintName(); },
-    hasName: function () { return !!loadName(); }
+    hasName: function () { return !!loadName(); },
+    /* 公告相关：控制台可 DanaiwaBoard.showIntro() 再弹一次 */
+    showIntro: openIntro,
+    hideIntro: closeIntro,
+    resetIntro: function () {
+      try { localStorage.removeItem(INTRO_SEEN_KEY); } catch (e) {}
+    }
   };
 })();
